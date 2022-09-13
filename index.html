@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+
+<html>
+
+    <head>
+        <meta charset="utf-8">
+
+        <meta http-equiv="Cache-Control" content="no-cache" />
+        <meta name="format-detection" content="telephone=no">
+        <meta name="msapplication-tap-highlight" content="no">
+        <meta name="viewport" content="user-scalable=yes, initial-scale=1, maximum-scale=2, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
+
+
+      
+        <link href="src/css/bootstrap.min.css" rel="stylesheet">
+        <link href="src/images/icon.ico" rel="shortcut icon" >
+     
+        <link href="src/css/animate.min.css" rel="stylesheet">
+        <link href="src/css/all.css" rel="stylesheet" type= "text/css">
+        <link href="src/css/base.css" rel="stylesheet">
+        
+        <script type = "text/javascript" src= "src/js/lib/jquery-3.2.1.min.js"></script>
+        <script type = "text/javascript" src= "src/js/lib/angular.min.js"></script>
+        <script type = "text/javascript" src= "src/js/lib/papaparse.min.js"></script>
+
+        <script type = "text/javascript" src= "src/js/General.js"></script>
+        <script type = "text/javascript" src= "src/js/AngularCode.js"></script>
+        <script type = "text/javascript" src= "src/js/Geocoding.js"></script>
+        <script type = "text/javascript" src= "src/js/MapCode.js"></script>
+        <script type = "text/javascript" src= "src/js/SpreadsheetCode.js"></script>
+      
+<!-- &libraries=places-->
+      <script 
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBCG3mWkgXwguk1D0qnYvuFvxcGOqoiFY8&callback=initMap"
+      defer
+    ></script>
+
+        <title>Map Routes</title>
+    </head>
+     <body ng-app="App" ng-controller="App as _app">
+
+
+      <button onClick = 'toggleMap();' style = "position: fixed; top:5px; right:5px;z-index:40;"> 
+        <i style = "font-size:30px; color:#333;" class="fas fa-list-ol"></i> 
+        &nbsp;&nbsp;&nbsp;
+        <i ng-show = "_app.map_view == 'compressed'" style = "font-size:20px; position:absolute; top:0px; right:0px; color:#000" class="fas fa-compress-alt"></i>
+        <i ng-show = "_app.map_view == 'expanded'" style = "font-size:20px; position:absolute; top:0px; right:0px; color:#000" class="fas fa-expand-alt"></i>
+      </button>
+
+
+      <div id="map"
+          style = "position:fixed;"
+          class = 'map-compressed'>
+      </div>
+
+     
+      
+
+      <div id="list"
+          style = "position:fixed;
+          background-color:#EEE;
+          border:1px solid black;
+          height:100vh;
+          padding-top:40px;
+          overflow-y:scroll;"
+          class = "list-expanded list-toolbar-compressed">
+
+          
+          <div ng-repeat = 'item in _app.rangeItems track by $index'
+          class="panel panel-default {{_app.item_background(item);}}" 
+          style = "margin:0px; padding:0px; position:relative;">
+            <div class="panel-body" style = "margin:0px; padding:4px">
+
+              
+              <i class="fas fa-check-circle button-icon" ng-hide = '_app.item_selected(item)' ng-click = "_app.select_item(item);"></i>
+              <i class="fas fa-times-circle button-icon"  ng-show = '_app.item_selected(item)' ng-click = "_app.select_item(item);"></i>
+              
+              <i class="fas fa-chevron-right button-icon" ng-hide = 'expanded' ng-click = "expanded = !expanded"></i>
+              <i class="fas fa-chevron-down button-icon" ng-show = 'expanded' ng-click = "expanded = !expanded"></i>
+
+              
+          
+              <h3 style = "display:inline-block">{{$index + 1}}.</h3>&nbsp;
+              
+              <input type = "text" ng-model = 'item.address' ng-change = "_app.clear_address(item);" style = "display: inline-block;">
+            
+             <div ng-show = 'expanded'>
+             <p><i>{{item.name}}</i></p>
+              <br>
+              <p><i>{{item.email}}</i></p>
+              <br>
+              <p><i>{{item.phone_number}}</i></p> 
+              <br>
+              <button ng-click = "_app.get_directions_from_here($index);"><i class="fas fa-directions icon"></i> Get Directions From Here</button>
+              <br>
+              <button ng-click = "_app.get_directions_to_here($index);"><i class="fas fa-map-marker-alt icon"></i> Get Directions To Here</button>
+             </div>
+  
+          </div>
+          </div>
+
+
+          
+          
+
+      </div>
+      
+
+
+      <div id = "toolbar" 
+      ng-show="_app.map_view == 'compressed'"
+      class = "" style = "
+      position: fixed;
+       top:0px; 
+      left: max(0px,calc(100vw - 400px)); 
+       padding-bottom:5px; 
+       padding-top:8px;
+       padding-left:5px;
+       width:min(100vw,390px);
+       background:#EEE; 
+       z-index:30;">
+        <div ng-click = "_app.toogleTools();">
+          <i class="fas fa-chevron-right icon"></i>&nbsp;<i class="fas fa-wrench icon"></i>&nbsp;<h3>Tools</h3>
+          </div>
+        <div ng-hide = "_app.toolbar_view == 'compressed'" >
+        <h4>Choose CSV:</h4>
+        <input type="file"
+        id="csv_file" 
+        name="csv_file"
+        accept="text/csv">
+        <div ng-hide = 'true'>
+          <h4> ({{_app.totalItems()}}) Between:</h4>
+            <input type="date" id = "date_start" ng-change = "_app.changeDates()" ng-model = '_app.date_start;'>
+            <p>And</p>
+            <input type="date" id = "date_end" ng-change = "_app.changeDates()" ng-model = '_app.date_end;'>
+            <h3> Total : {{_app.rangeItems.length}}</h3>
+            <br>
+            <h3> Selected : {{_app.selectedItems.length}}</h3>
+            <br>
+          </div>
+          <button ng-click = "_app.geocode();"> <i class="fas fa-globe icon"></i> Geocode</button>
+
+          <button id = "select_button" ng-click = "_app.enter_select_mode();"><i class="far fa-object-group icon"></i> Selct</button>
+          <button ng-click = "_app.selectAll();"><i class="fas fa-check-circle icon"></i></i> Select All</button>
+          <button ng-click = "_app.selectNone();"><i class="fas fa-minus-circle icon"></i></i>Select None</button>
+          <button ng-click = "_app.removeSelected();"><i class="fas fa-trash-alt icon"></i> Remove Selected</button>
+          <br>
+          <button ng-click = "_app.moveSelectionUp();"><i class="fas fa-arrow-circle-up icon"></i> Shift Selection Up</button>
+          <button ng-click = "_app.moveSelectionDown();"><i class="fas fa-arrow-circle-down icon"></i> Shift Selection Down</button>
+          <br>
+         
+          <button ng-click = "_app.set_start_stop_points();" id = "start_stop_button" ><i class="fas fa-route icon"></i> Set Start Stop Points</button>
+          <button onClick = "getDirectons();"><i class="fas fa-directions icon"></i> Get Directions</button>
+          <button ng-click = "_app.flipAll();"><i style ="transform: rotate(90deg);" class="fas fa-exchange-alt icon"></i> Flip All</button>
+          <button ng-click = "_app.save();"><i class="fas fa-save icon"></i> Save</button>
+          <button ng-click = "_app.download();"><i class="fas fa-file-download icon"></i> Download</button>
+
+
+        </div>
+    
+
+      </div>
+
+   
+     <!--
+      <div style = "position: absolute; bottom:30px; left:10px; background:rgba(255,255,255,.8); padding:10px">
+        <div ng-hide = '_app.total_distance==0'>
+        <p><b>{ {_app.total_distance}}</b></p>
+        <br>
+        <p><b>{ {_app.total_time}}</b></p>
+       </div>
+      -->
+     
+       <button style = "position: fixed; bottom:25px; left:5px; padding:5px;"
+       id = 'locaton_button'
+       ng-click = "_app.toggle_location();">
+       
+        <i class="fas fa-location-arrow icon"></i>
+       </button>
+
+    </body>
+  
+</html>
